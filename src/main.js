@@ -21,8 +21,6 @@ interact('#testDiv')
     listeners: {
      
       move: dragMoveListener,
-
-
     }
   })
 
