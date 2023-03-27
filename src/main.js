@@ -2,6 +2,8 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import './assets/main.css'
+import interact from interact
+
 
 const app = createApp(App)
 app.use(createPinia())
@@ -11,8 +13,8 @@ app.mount('#app')
 
 
 
-
 makeDraggable(document.getElementById("testDiv"));
+
 
 function makeDraggable(element) {
     let deltaMouse = {x: 0, y: 0};
@@ -20,7 +22,7 @@ function makeDraggable(element) {
    
     element.onmousedown = onMouseDown;
 
-    const onMouseDown = (e) => {
+    function onMouseDown (e)  {
       e = e || window.event;
       e.preventDefault();
       
@@ -30,7 +32,7 @@ function makeDraggable(element) {
       document.onmousemove = onMouseMove;
     }
   
-    const onMouseMove = (e) => {
+    function onMouseMove (e)  {
       e = e || window.event;
       e.preventDefault();
       
@@ -41,7 +43,7 @@ function makeDraggable(element) {
       element.style.left = (element.offsetLeft - deltaMouse.x) + "px";
     }
   
-    const onMouseUp = () => {
+    function onMouseUp () {
       document.onmouseup = null;
       document.onmousemove = null;
     }
