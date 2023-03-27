@@ -13,11 +13,10 @@ app.mount('#app')
 
 
 // target elements with the "draggable" class
-interact('#testDiv')
+interact('.prompt')
   .draggable({
-    inertia: true,
     autoScroll: true,
-
+    cursorChecker: () => null,
     listeners: {
      
       move: dragMoveListener,
