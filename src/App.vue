@@ -1,28 +1,104 @@
 <script>
+import interact from 'interactjs'
+
 export default {
     data() {
         return {
             message: "Hello world!"
         }
+    },
+
+
+    methods: {
+        initialize() {
+
+
+            function refreshCanvas(canvas) {
+                const ctx = canvas.getContext("2d");
+                ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+                ctx.beginPath();
+                ctx.arc(95, 50, 40, 0, 2 * Math.PI);
+                ctx.stroke();
+            }
+
+            const canvas = document.querySelector("canvas");
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                refreshCanvas(canvas)
+            });
+
+
+            interact('.prompt').draggable({
+                autoScroll: true,
+                ignoreFrom: '.content',
+                cursorChecker: () => null,
+                listeners: {
+
+                    move: (event) => {
+                        var target = event.target
+                        // keep the dragged position in the data-x/data-y attributes
+                        var x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx
+                        var y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy
+
+                        // translate the element
+                        target.style.transform = 'translate(' + x + 'px, ' + y + 'px)'
+
+                        // update the posiion attributes
+                        target.setAttribute('data-x', x)
+                        target.setAttribute('data-y', y)
+
+                        refreshCanvas(canvas);
+                    }
+                }
+            });
+
+        }
+    },
+    mounted: function () {
+        this.initialize();
     }
 }
+
+
+
+
+
+
+
+
+
 </script>
+
+
+
+
+
+
+
 
 <template>
     <div
-        class="prompt flex flex-col  transition-shadow bg-white  rounded-xl shadow-lg  shadow-violet-200 hover:shadow-xl hover:shadow-violet-200  p-6 absolute hover:outline-blue-300 hover:outline  hover:outline-1">
-
-        <div class="flex flex-col content w-72">
-            <h1 class="h-14 font-bold">Few-shot prompt</h1>
+        class="prompt  top-0 flex flex-col flex-wrap transition-shadow  bg-white  rounded-xl shadow-lg  shadow-violet-200 hover:shadow-xl hover:shadow-violet-200  p-6 absolute hover:outline-blue-300 hover:outline  hover:outline-1">
+        
+        <div class="transition-all cursor-pointer opacity-0 hover:opacity-20  h-16 fixed top-0 left-0 w-full bg-blue-200"></div>
+        
+        
+        <div class="content w-72">
+            <h1 class="h-14 z-10 font-bold prompt-title">Few-shot prompt</h1>
+            
             <!-- Inputs -->
             <input
-                class="w-full peer   transition-all duration-300 border border-l-0 border-r-0 outline-0 border-t-0 border-slate-200 focus:border-slate-400 py-2"
+                class=" prompt-example  transition-all duration-300 border border-l-0 border-r-0 outline-0 border-t-0 border-slate-200 focus:border-slate-400 py-2"
                 type="text" name="exampleQuestion" placeholder="French: Bonjour" />
             <input
-                class="mt-4 w-full focus:placeholder-transparent transition-all duration-300 border border-l-0 border-r-0 outline-0 border-t-0 border-slate-200 focus:border-slate-400 py-2 "
+                class="mt-4 focus:placeholder-transparent transition-all duration-300 border border-l-0 border-r-0 outline-0 border-t-0 border-slate-200 focus:border-slate-400 py-2 "
                 type="text" placeholder="English: Good day" />
             <input
-                class="mt-4 w-full focus:placeholder-transparent transition-all duration-300 border border-l-0 border-r-0 outline-0 border-t-0 border-slate-200 focus:border-slate-400 py-2"
+                class="mt-4  focus:placeholder-transparent transition-all duration-300 border border-l-0 border-r-0 outline-0 border-t-0 border-slate-200 focus:border-slate-400 py-2"
                 type="text" placeholder="French: Sacre bleu!" />
 
             <!-- Controls -->
@@ -43,16 +119,16 @@ export default {
 
 
     <div
-        class="prompt flex flex-col  transition-shadow bg-white  rounded-xl shadow-lg  shadow-violet-200 hover:shadow-xl hover:shadow-violet-200  p-6 absolute hover:outline-blue-300 hover:outline  hover:outline-1">
-
+        class="prompt top-0 flex flex-col  transition-shadow bg-white  rounded-xl shadow-lg  shadow-violet-200 hover:shadow-xl hover:shadow-violet-200  p-6 absolute hover:outline-blue-300 hover:outline  hover:outline-1">
+        <div class="transition-all cursor-pointer  opacity-0 hover:opacity-20  h-16 fixed top-0 left-0 w-full bg-blue-200"></div>
         <div class="flex flex-col content w-72">
-            <h1 class="h-14 font-bold">Freestyle prompt</h1>
+            <h1 class="h-14  font-bold">Freestyle prompt</h1>
             <!-- Inputs -->
             <textarea
                 class="w-full peer   transition-all duration-300 border border-l-0 border-r-0 outline-0 border-t-0 border-slate-200 focus:border-slate-400 py-2"
                 type="text" name="exampleQuestion" placeholder="Hey, please generate some cool ideas for my project!" />
-            
-        
+
+
             <!-- Controls -->
             <div class="flex mt-10 items-center justify-between ">
                 <button class="py-3 px-5 font-semibold rounded-md bg-blue-600 text-white">Process</button>
@@ -64,10 +140,7 @@ export default {
                     </svg>
                 </div>
             </div>
-
-
         </div>
     </div>
-
 </template>
 
