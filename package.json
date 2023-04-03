@@ -9,7 +9,9 @@
   },
   "dependencies": {
     "interactjs": "^1.10.17",
+    "openai": "^3.2.1",
     "pinia": "^2.0.32",
+    "uuid": "^9.0.0",
     "vue": "^3.2.47"
   },
   "devDependencies": {

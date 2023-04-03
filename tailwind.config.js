@@ -6,7 +6,7 @@ module.exports = {
   ],
   theme: {
     fontFamily: {
-      'sans': ['Inter', 'system-ui'],
+      'sans': ['Public Sans', 'system-ui'],
       
     },
     
