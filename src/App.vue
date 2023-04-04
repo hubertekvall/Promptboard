@@ -151,6 +151,8 @@ export default {
             }
             let idx = this.prompts.findIndex((p) => p.id == prompt.id);
 
+    
+
 
             if (prompt.type === 'image') {
                 const completion = await openai.createImage({
@@ -159,8 +161,8 @@ export default {
                     size: "256x256",
                 });
 
-
-                this.prompts[idx].response = completion.data;
+                console.log(completion);    
+                this.prompts[idx].response = completion.data.data[0].url;
             }
 
             else {
@@ -173,7 +175,6 @@ export default {
                 this.prompts[idx].response = completion.data.choices[0].message.content;
             }
 
-            console.log(this.prompts[idx].response);
 
 
         },
@@ -223,7 +224,7 @@ export default {
                 <h1 class="h-14 z-10 font-bold prompt-title">Few-shot prompt</h1>
 
                 <div v-if="prompt.processed">
-                    {{ prompt.response }}
+                    {{ prompt.response.data.choices[0].message.content }}
                 </div>
                 <div v-else>
                     <input v-model="prompt.taskA"
@@ -276,7 +277,7 @@ export default {
                 <h1 class="h-14 z-10 font-bold prompt-title">Freestyle Prompt</h1>
 
                 <div v-if="prompt.processed">
-                    {{ prompt.response }}
+                    {{ prompt.response}}
                 </div>
 
                 <textarea v-else v-model="prompt.input"
@@ -324,9 +325,9 @@ export default {
             <div class="content w-72">
                 <h1 class="h-14 z-10 font-bold prompt-title">Image Prompt</h1>
 
-                <div v-if="prompt.processed">
+                <div  class="rounded-2xl shadow-md shadow-zinc-300 overflow-clip" v-if="prompt.processed">
 
-                    <img :src="prompt.response.data[0].url" />
+                    <img class="w-full" :src="prompt.response" alt="Prompt"/>
                 </div>
                 <textarea v-else v-model="prompt.input"
                     class="prompt-example focus:placeholder-transparen w-full transition-all duration-300 border border-l-0 border-r-0 outline-0 border-t-0 border-slate-200 focus:border-slate-400 py-2"
