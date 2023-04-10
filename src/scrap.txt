@@ -1,0 +1,47 @@
+// const configuration = new Configuration({
+    //     apiKey: this.apiKey,
+    // });
+
+    // delete configuration.baseOptions.headers['User-Agent'];
+
+    // const openai = new OpenAIApi(configuration);
+
+
+    // let promptText = '';
+
+    // switch (prompt.type) {
+    //     case 'fewshot':
+    //         promptText = prompt.taskA + "\n" + prompt.answerA + "\n" + prompt.taskB;
+    //         break;
+
+
+    //     case 'freestyle':
+    //         promptText = prompt.input
+    //         break;
+
+    // }
+    // let idx = this.prompts.findIndex((p) => p.id == prompt.id);
+
+
+
+
+    // if (prompt.type === 'image') {
+    //     const completion = await openai.createImage({
+    //         prompt: prompt.input,
+    //         n: 1,
+    //         size: "256x256",
+    //     });
+
+    //     console.log(completion);
+    //     this.prompts[idx].response = completion.data.data[0].url;
+    // }
+
+    // else {
+    //     const completion = await openai.createChatCompletion({
+    //         model: "gpt-3.5-turbo",
+    //         messages: [{ role: "user", content: promptText }],
+    //     });
+
+
+    //     this.prompts[idx].response = completion.data.choices[0].message.content;
+    // }
