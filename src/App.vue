@@ -168,9 +168,9 @@ export default {
 
             let startPrompt = senderPrompt;
             while (this.isNotEmpty(startPrompt.from)) {
-                startPrompt = startPrompt.from; 
+                startPrompt = startPrompt.from;
             }
-            
+
             if (senderPrompt.id !== receiverPrompt.id) {
                 if (startPrompt.id !== receiverPrompt.id) {
                     this.disconnectOutput(senderPrompt);
@@ -196,11 +196,83 @@ export default {
             prompt.isDone = false;
         },
 
-        async processPrompt(promptID) {
+        async processPrompt(promptID, messages) {
             let prompt = this.prompts[promptID];
 
             prompt.isProcessing = true;
             prompt.isDone = false;
+
+            const configuration = new Configuration({ apiKey: this.apiKey });
+            delete configuration.baseOptions.headers['User-Agent'];
+            const openai = new OpenAIApi(configuration);
+
+
+            let promptMessages = messages ? [...messages] : [];
+            switch (prompt.type) {
+
+                case 'Fewshot':
+                    promptMessages.push(
+                        { role: "user", content: prompt.exampleTask },
+                        { role: "user", content: prompt.exampleAnswer },
+                        { role: "user", content: prompt.task }
+                    )
+                    break;
+
+                case 'Brainstorm':
+                    promptMessages.push({
+                        role: "user", content: prompt.promptText
+                    })
+
+                case 'Logotype':
+                    promptMessages.push(
+                        { role: "user", content: "A logotype that is" },
+                        { role: "user", content: prompt.promptText }
+                    )
+                    break;
+
+
+            }
+
+            
+
+
+            switch (prompt.type) {
+                case 'Fewshot':
+                case 'Brainstorm': {
+                    const completion = await openai.createChatCompletion({
+                        model: "gpt-3.5-turbo",
+                        messages: promptMessages,
+                    });
+
+                    prompt.response = completion.data.choices[0].message.content;
+                    promptMessages.push({
+                        role: "assistant", content: prompt.response
+                    })
+                }
+                    break;
+
+                case 'Icon':
+                case 'Logotype': {
+
+                    let merged = promptMessages.flatMap(pm => pm.message).join(' ');
+
+
+                    const completion = await openai.createImage({
+                        prompt: merged,
+                        n: 1,
+                        size: "256x256",
+                    });
+
+                    prompt.response = completion.data.data[0].url;
+                    prompt.isImage = true;
+                }
+
+                    break;
+            }
+
+
+
+
 
 
             prompt.isProcessing = false;
@@ -208,7 +280,7 @@ export default {
 
 
             if (prompt.to.id in this.prompts) {
-                this.processPrompt(prompt.to.id);
+                this.processPrompt(prompt.to.id, promptMessages);
             }
         },
 
@@ -302,14 +374,28 @@ export default {
                 <i class="gg-spinner"></i>
             </div>
 
-            <div v-else-if="prompt.isDone">
+            <div class="mt-4" v-else-if="prompt.isDone">
+                <img v-if="prompt.isImage" class="w-full shadow-md rounded-2xl" :src="prompt.response" />
+                <p v-else>{{ prompt.response }}</p>
+
 
             </div>
 
             <div v-else>
-                <div v-if="prompt.type == 'Fewshot'">
-                    <input class="prompt-input" type="text" name="taskExample" v-model="prompt.taskExample"
-                        placeholder="Prompt" />
+                <div class="mt-4" v-if="prompt.type == 'Fewshot'">
+                    <input class="prompt-input" type="text" v-model="prompt.exampleTask" placeholder="Prompt" />
+                    <input class="prompt-input" type="text" v-model="prompt.exampleAnswer" placeholder="Prompt" />
+                    <input class="prompt-input" type="text" v-model="prompt.task" placeholder="Prompt" />
+                </div>
+
+
+                <div class="mt-4" v-else-if="prompt.type == 'Brainstorm'">
+                    <input class="prompt-input" type="text" v-model="prompt.promptText" placeholder="Prompt" />
+                </div>
+
+                <div class="mt-4" v-else-if="prompt.type == 'Logotype'">
+                    <input class="prompt-input" type="text" v-model="prompt.promptText"
+                        placeholder="Modern and sleek, bright colors" />
                 </div>
             </div>
 
