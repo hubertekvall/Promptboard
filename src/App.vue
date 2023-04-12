@@ -196,6 +196,22 @@ export default {
             prompt.isDone = false;
         },
 
+        async chatCompletion(messages) {
+
+            const configuration = new Configuration({ apiKey: this.apiKey });
+            delete configuration.baseOptions.headers['User-Agent'];
+            const openai = new OpenAIApi(configuration);
+
+            const completion = await openai.createChatCompletion({
+                model: "gpt-3.5-turbo",
+                messages: messages,
+            });
+
+            return completion.data.choices[0].message.content;
+
+        },
+
+
         async processPrompt(promptID, messages) {
             let prompt = this.prompts[promptID];
 
@@ -220,31 +236,40 @@ export default {
 
                 case 'Brainstorm':
                     promptMessages.push({
-                        role: "user", content: prompt.promptText
+                        role: "user", content: "You are now a design brainstorming assistant. I will give you a short text and you'll brainstorm one terse idea, observation or phrase based on that text, be creative" + "\n" + prompt.promptText
                     })
-
+                    break;
                 case 'Logotype':
-                    promptMessages.push(
-                        { role: "user", content: "A logotype that is" },
-                        { role: "user", content: prompt.promptText }
-                    )
+                    if (promptMessages.length > 0) {
+                        console.log(promptMessages);
+                        promptMessages.push(
+                            { role: "user", content: "Summarize this chat and turn it into an image prompt for DALL-E of a logotype and include: " + prompt.promptText }
+                        );
+                    }
+
+
+                    else{
+                        promptMessages.push(
+                            { role: "user", content: "Create an image prompt for DALL-E of a logotype that matches: " + prompt.promptText }
+                        );
+                    }
+
+
+                    prompt.promptText = await this.chatCompletion(promptMessages);
+                    console.log(prompt.promptText);
                     break;
 
 
             }
 
-            
+
 
 
             switch (prompt.type) {
                 case 'Fewshot':
                 case 'Brainstorm': {
-                    const completion = await openai.createChatCompletion({
-                        model: "gpt-3.5-turbo",
-                        messages: promptMessages,
-                    });
+                    prompt.response = await this.chatCompletion(promptMessages);
 
-                    prompt.response = completion.data.choices[0].message.content;
                     promptMessages.push({
                         role: "assistant", content: prompt.response
                     })
@@ -254,11 +279,10 @@ export default {
                 case 'Icon':
                 case 'Logotype': {
 
-                    let merged = promptMessages.flatMap(pm => pm.message).join(' ');
-
+             
 
                     const completion = await openai.createImage({
-                        prompt: merged,
+                        prompt: prompt.promptText,
                         n: 1,
                         size: "256x256",
                     });
