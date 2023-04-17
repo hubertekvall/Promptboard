@@ -239,6 +239,12 @@ export default {
                         role: "user", content: "You are now a design brainstorming assistant. I will give you a short text and you'll brainstorm one terse idea, observation or phrase based on that text, be creative" + "\n" + prompt.promptText
                     })
                     break;
+
+                case 'Free':
+                    promptMessages.push({
+                        role: "user", content: prompt.promptText
+                    })  
+                    break;  
                 case 'Logotype':
                     if (promptMessages.length > 0) {
                         console.log(promptMessages);
@@ -266,6 +272,7 @@ export default {
 
 
             switch (prompt.type) {
+                case 'Free':
                 case 'Fewshot':
                 case 'Brainstorm': {
                     prompt.response = await this.chatCompletion(promptMessages);
@@ -390,7 +397,7 @@ export default {
             </div>
 
             <h1 class="prompt-title text-xl font-extrabold ">
-                {{ prompt.type }}
+                {{ prompt.type + ' Prompt' }}
             </h1>
 
 
@@ -401,8 +408,6 @@ export default {
             <div class="mt-4" v-else-if="prompt.isDone">
                 <img v-if="prompt.isImage" class="w-full shadow-md rounded-2xl" :src="prompt.response" />
                 <p v-else>{{ prompt.response }}</p>
-
-
             </div>
 
             <div v-else>
@@ -412,7 +417,6 @@ export default {
                     <input class="prompt-input" type="text" v-model="prompt.task" placeholder="Prompt" />
                 </div>
 
-
                 <div class="mt-4" v-else-if="prompt.type == 'Brainstorm'">
                     <input class="prompt-input" type="text" v-model="prompt.promptText" placeholder="Prompt" />
                 </div>
@@ -420,6 +424,10 @@ export default {
                 <div class="mt-4" v-else-if="prompt.type == 'Logotype'">
                     <input class="prompt-input" type="text" v-model="prompt.promptText"
                         placeholder="Modern and sleek, bright colors" />
+                </div>
+
+                <div class="mt-4" v-else-if="prompt.type == 'Free'">
+                    <input class="prompt-input" type="text" v-model="prompt.promptText" placeholder="Prompt" />
                 </div>
             </div>
 
@@ -447,10 +455,10 @@ export default {
             <button @click="createPrompt('Logotype')" class="px-3 rounded-md sm:rounded-lg py-1 hover:bg-green-200">
                 Logotype </button>
 
-            <div class=" bg-slate-200 w-px "> </div>
-            <button @click="createPrompt('Icon')" class="px-3 rounded-md sm:rounded-lg py-1 hover:bg-green-200"> Icon
-            </button>
 
+            <div class=" bg-slate-200 w-px "> </div>
+            <button @click="createPrompt('Free')" class="px-3 rounded-md sm:rounded-lg py-1 hover:bg-green-200"> Free
+            </button>
         </div>
 
         <input v-model="apiKey"
