@@ -23,10 +23,9 @@ export default {
                 'Persona': {
                     method: async function (prompt) {
                         const personaText = await self.getChatCompletion(prompt, `Generate a persona that is ${prompt.promptModifier}, be terse and short. Only include name, age, occupation, background, goals and motivations, interests and challenges. Output each header as an html list , put each header in a <strong> tag`);
-                        const [url, imagePrompt] = await self.getImageGeneration(prompt, "Generate an image prompt for this persona");
+                        const [url, imagePrompt] = await self.getImageGeneration(prompt, "Describe an image of this persona in text form. Be terse and short");
 
-                        console.log(prompt.messages);
-
+            
                         prompt.imagePrompt = imagePrompt;
                         prompt.imageURL = url;
                         prompt.response = personaText;
@@ -72,6 +71,9 @@ export default {
 
             const response = completion.data.choices[0].message.content
             prompt.messages.push({ role: "assistant", content: response });
+
+            console.log("User: " + prefix );
+            console.log("Assistant: " + prompt.messages.at(-1).content );
             return response;
         },
 
@@ -83,7 +85,7 @@ export default {
             }
 
             const imagePrompt = prompt.messages.at(-1).content;
-
+            console.log("Image prompt: " + imagePrompt);
             const completion = await openai.createImage({
                 prompt: prompt.messages.at(-1).content,
                 n: 1,
@@ -325,7 +327,6 @@ export default {
                 prompt.messages = []
             }
 
-            console.log(prompt.messages);
 
             await prompt.process(prompt);
 
@@ -460,7 +461,7 @@ export default {
                         <div class="w-96 mt-4" v-if="prompt.type == 'Persona'">
 
                             <input class="prompt-input" type="text" v-model="prompt.promptModifier"
-                                placeholder="Describe something" />
+                                placeholder="Describe something about the persona you want" />
 
                         </div>
                     </div>
