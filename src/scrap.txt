@@ -45,3 +45,75 @@
 
     //     this.prompts[idx].response = completion.data.choices[0].message.content;
     // }
+
+
+
+
+
+
+
+
+
+
+    switch (prompt.type) {
+
+                case 'Fewshot':
+                    promptMessages.push(
+                        { role: "user", content: prompt.exampleTask },
+                        { role: "user", content: prompt.exampleAnswer },
+                        { role: "user", content: prompt.task }
+                    )
+                    break;
+
+                case 'Brainstorm':
+                    promptMessages.push({
+                        role: "user", content: prompt.promptText
+                    })
+
+                case 'Logotype':
+                    promptMessages.push(
+                        { role: "user", content: "A logotype that is" },
+                        { role: "user", content: prompt.promptText }
+                    )
+                    break;
+
+
+            }
+
+            
+
+
+            switch (prompt.type) {
+                case 'Fewshot':
+                case 'Brainstorm': {
+                    const completion = await openai.createChatCompletion({
+                        model: "gpt-3.5-turbo",
+                        messages: promptMessages,
+                    });
+
+                    prompt.response = completion.data.choices[0].message.content;
+                    promptMessages.push({
+                        role: "assistant", content: prompt.response
+                    })
+                }
+                    break;
+
+                case 'Icon':
+                case 'Logotype': {
+
+                    let merged = promptMessages.flatMap(pm => pm.message).join(' ');
+
+
+                    const completion = await openai.createImage({
+                        prompt: merged,
+                        n: 1,
+                        size: "256x256",
+                    });
+
+                    prompt.response = completion.data.data[0].url;
+                    prompt.isImage = true;
+                }
+
+                    break;
+            }
+
