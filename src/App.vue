@@ -51,9 +51,16 @@ export default {
 
                 'Instruction': {
                     method: async function (prompt) {
-                        const prefix = `Be inspired by our chat history and behave this way
-                                        User: ${prompt.exampleTask}
-                                        Assistant: ${prompt.exampleAnswer}`
+                        // const prefix = "You will roleplay with me, here's an example of how your character should behave when conversating. Remember to play the role. \n" +
+                        //                 "User: " + prompt.exampleTask + "\n" + 
+                        //                 "Assistant: " + prompt.exampleAnswer + "\n" + 
+                        //                 "User: " + prompt.task;
+
+                        const prefix = "You will roleplay with me, here's an example of how your character should behave when conversating. Remember to play the role. \n" +
+                            prompt.exampleTask + "\n" +
+                            prompt.exampleAnswer + "\n" +
+                            prompt.task;
+
 
                         const instruction = await self.getChatCompletion(prompt, prefix);
                         prompt.response = instruction;
@@ -61,12 +68,10 @@ export default {
                 },
                 'Chat': {
                     method: async function (prompt) {
-                        const prefix = `Be inspired by our chat history and behave this way
-                                        User: ${prompt.exampleTask}
-                                        Assistant: ${prompt.exampleAnswer}`
 
-                        const instruction = await self.getChatCompletion(prompt, prefix);
-                        prompt.response = instruction;
+                        await self.getChatCompletion(prompt, prompt.reply);
+                        prompt.visibleMessages.push(prompt.messages.at(-2), prompt.messages.at(-1));
+                        prompt.reply = '';
                     },
                 },
             },
@@ -86,6 +91,8 @@ export default {
                 prompt.messages.push({
                     role: "user", content: prefix
                 });
+
+
             }
 
             const completion = await openai.createChatCompletion({
@@ -216,6 +223,7 @@ export default {
                 isDone: false,
                 isProcessing: false,
                 messages: [],
+                visibleMessages: [],
                 to: [],
                 from: null
             }
@@ -339,21 +347,39 @@ export default {
 
 
 
-        async processPrompt(promptID) {
+
+        async processPrompt(promptID, sendChat) {
             let prompt = this.prompts[promptID];
 
             prompt.isProcessing = true;
             prompt.isDone = false;
 
-            if (prompt.from !== null) {
-                prompt.messages = prompt.from.messages.slice();
+
+
+            if (prompt.type === 'Chat' && !sendChat) {
+              
+                const fromCopy = {
+                    ...prompt.from
+                }
+
+                prompt.visibleMessages = [];
+                prompt.messages = fromCopy.messages;
             }
+
             else {
-                prompt.messages = []
+                if (prompt.from !== null) {
+                    prompt.messages = prompt.from.messages.slice();
+                }
+
+                else {
+                    prompt.messages = []
+                }
+
+                await prompt.process(prompt);
+
             }
 
 
-            await prompt.process(prompt);
 
 
             prompt.isProcessing = false;
@@ -462,15 +488,13 @@ export default {
             </h1>
 
             <div class="prompt-inner transition-all duration-500">
-                <div v-if="prompt.isProcessing" class="h-96 w-96 justify-center items-center flex">
+                <div v-if="prompt.isProcessing && prompt.type !== 'Chat'"
+                    class="h-96 w-96 justify-center items-center flex">
                     <i class="gg-spinner"></i>
-
                 </div>
 
 
-
-                <div v-else class="transition-all">
-
+                <div v-else>
                     <div v-if="prompt.type == 'Persona'">
 
                         <div class="space-y-8 flex flex-wrap justify-center" v-if="prompt.isDone">
@@ -485,7 +509,6 @@ export default {
                         <div class="w-96 mt-4" v-else="prompt.isDone">
                             <input class="prompt-input" type="text" v-model="prompt.promptModifier"
                                 placeholder="Describe something about the persona" />
-
                         </div>
                     </div>
 
@@ -507,7 +530,7 @@ export default {
 
                         <div v-if="prompt.isDone">
                             <div v-if="prompt.isDone" v-html="prompt.response"
-                                class=" w-full overflow-y-scroll space-y-2 max-h-64 text-sm rounded-xl bg-slate-50 p-4">
+                                class=" w-96 overflow-y-scroll space-y-2 max-h-64 text-sm rounded-xl bg-slate-50 p-4">
                             </div>
                         </div>
 
@@ -516,38 +539,56 @@ export default {
                                 placeholder="What you want to say" />
                             <input class="prompt-input" type="text" v-model="prompt.exampleAnswer"
                                 placeholder="How should I react?" />
+                            <input class="prompt-input" type="text" v-model="prompt.task"
+                                placeholder="How should I react?" />
 
                         </div>
                     </div>
+
+
+
+
                     <div v-if="prompt.type == 'Chat'" class="space-y-8  w-96 items-center flex flex-col">
-
-                      
-                        <div v-if="prompt.isDone" v-html="prompt.response"
-                            class=" w-full overflow-y-scroll space-y-2 max-h-64 text-sm rounded-xl bg-slate-50 p-4">
-                        </div>
-
-                        <div class="w-96 mt-4 overflow-y-scroll" v-else>
-                            <ul v-for="message in prompt.messages">
-                                <li v-if="message.role === 'user'" class="">{{message.content}}</li>
-                                <li v-else>{{message.content}} hello</li>
+                        <div class="h-96 w-96 p-2 rounded-xl  bg-slate-50  overflow-y-scroll">
+                            <ul style="list-style-type: none;" v-for="message in prompt.visibleMessages">
+                                <li v-if="message.role === 'user'" class="text-sm bg-blue-200 p-2 rounded-md"
+                                    v-html="message.content"></li>
+                                <li v-else class="text-sm bg-slate-200 p-2 rounded-md" v-html="message.content"></li>
                             </ul>
-                            <input class="prompt-input" type="text" v-model="prompt.answer"
-                                placeholder="Your answer" />
 
+                            <div v-if="prompt.isProcessing" class="mt-4 bg-slate-100 p-2 rounded-lg"> <i
+                                    class="gg-spinner"></i></div>
                         </div>
+                        <input class="prompt-input" type="text" v-model="prompt.reply" placeholder="Your answer" />
                     </div>
 
 
 
 
                 </div>
+                <div v-if="prompt.type == 'Chat'" class='mt-8 flex space-x-2 justify-between items-center'>
+                    <button @click="processPrompt(prompt.id, true)"
+                        class='rounded-lg p-2 px-4 font-bold text-white bg-blue-600 hover:bg-blue-500'>Reply</button>
+
+                    <button @click="deletePrompt(prompt.id)"
+                        class='rounded-lg font-bold p-2 bg-slate-100 text-slate-400 hover:bg-red-500 hover:text-red-100'>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M8 11C7.44772 11 7 11.4477 7 12C7 12.5523 7.44772 13 8 13H16C16.5523 13 17 12.5523 17 12C17 11.4477 16.5523 11 16 11H8Z"
+                                fill="currentColor" />
+                            <path fill-rule="evenodd" clip-rule="evenodd"
+                                d="M1 5C1 2.79086 2.79086 1 5 1H19C21.2091 1 23 2.79086 23 5V19C23 21.2091 21.2091 23 19 23H5C2.79086 23 1 21.2091 1 19V5ZM5 3H19C20.1046 3 21 3.89543 21 5V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3Z"
+                                fill="currentColor" />
+                        </svg>
+                    </button>
+
+                </div>
+                <PromptControl v-else @processPrompt="processPrompt" @toggleEdit="toggleEdit" :isDone="prompt.isDone"
+                    :isProcessing="prompt.isProcessing" :promptID="prompt.id" @deletePrompt="deletePrompt" />
             </div>
 
 
-            <PromptControl v-if="prompt.type !== 'Chat'" @processPrompt="processPrompt" @toggleEdit="toggleEdit" :isDone="prompt.isDone"
-                :isProcessing="prompt.isProcessing" :promptID="prompt.id" @deletePrompt="deletePrompt" />
 
-            <button v-else @click="$emit('processPrompt', promptID)" class='rounded-lg p-2 px-4 font-bold text-white bg-blue-600 hover:bg-blue-500'>Reply</button>
         </div>
     </div>
 
