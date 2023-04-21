@@ -48,6 +48,27 @@ export default {
                 'Assistant persona': function () {
 
                 },
+
+                'Instruction': {
+                    method: async function (prompt) {
+                        const prefix = `Be inspired by our chat history and behave this way
+                                        User: ${prompt.exampleTask}
+                                        Assistant: ${prompt.exampleAnswer}`
+
+                        const instruction = await self.getChatCompletion(prompt, prefix);
+                        prompt.response = instruction;
+                    },
+                },
+                'Chat': {
+                    method: async function (prompt) {
+                        const prefix = `Be inspired by our chat history and behave this way
+                                        User: ${prompt.exampleTask}
+                                        Assistant: ${prompt.exampleAnswer}`
+
+                        const instruction = await self.getChatCompletion(prompt, prefix);
+                        prompt.response = instruction;
+                    },
+                },
             },
             dragging: false
         }
@@ -482,6 +503,39 @@ export default {
                                 placeholder="Topic, theme or anything to brainstorm about" />
                         </div>
                     </div>
+                    <div v-if="prompt.type == 'Instruction'" class="space-y-8  w-96 items-center flex flex-col">
+
+                        <div v-if="prompt.isDone">
+                            <div v-if="prompt.isDone" v-html="prompt.response"
+                                class=" w-full overflow-y-scroll space-y-2 max-h-64 text-sm rounded-xl bg-slate-50 p-4">
+                            </div>
+                        </div>
+
+                        <div class="w-96 mt-4" v-else>
+                            <input class="prompt-input" type="text" v-model="prompt.exampleTask"
+                                placeholder="What you want to say" />
+                            <input class="prompt-input" type="text" v-model="prompt.exampleAnswer"
+                                placeholder="How should I react?" />
+
+                        </div>
+                    </div>
+                    <div v-if="prompt.type == 'Chat'" class="space-y-8  w-96 items-center flex flex-col">
+
+                      
+                        <div v-if="prompt.isDone" v-html="prompt.response"
+                            class=" w-full overflow-y-scroll space-y-2 max-h-64 text-sm rounded-xl bg-slate-50 p-4">
+                        </div>
+
+                        <div class="w-96 mt-4 overflow-y-scroll" v-else>
+                            <ul v-for="message in prompt.messages">
+                                <li v-if="message.role === 'user'" class="">{{message.content}}</li>
+                                <li v-else>{{message.content}} hello</li>
+                            </ul>
+                            <input class="prompt-input" type="text" v-model="prompt.answer"
+                                placeholder="Your answer" />
+
+                        </div>
+                    </div>
 
 
 
@@ -490,8 +544,10 @@ export default {
             </div>
 
 
-            <PromptControl @processPrompt="processPrompt" @toggleEdit="toggleEdit" :isDone="prompt.isDone"
+            <PromptControl v-if="prompt.type !== 'Chat'" @processPrompt="processPrompt" @toggleEdit="toggleEdit" :isDone="prompt.isDone"
                 :isProcessing="prompt.isProcessing" :promptID="prompt.id" @deletePrompt="deletePrompt" />
+
+            <button v-else @click="$emit('processPrompt', promptID)" class='rounded-lg p-2 px-4 font-bold text-white bg-blue-600 hover:bg-blue-500'>Reply</button>
         </div>
     </div>
 
