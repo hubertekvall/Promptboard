@@ -22,20 +22,23 @@ export default {
             processMethods: {
                 'Persona': {
                     method: async function (prompt) {
-                        const personaText = await self.getChatCompletion(prompt, `Generate a persona that is ${prompt.promptModifier}, be terse and short. Only include name, age, occupation, background, goals and motivations, interests and challenges. Output each header as an html list , put each header in a <strong> tag`);
+                        const personaText = await self.getChatCompletion(prompt, `Consider our chat history and generate a persona that is ${prompt.promptModifier},  be inspired by our chat history, be terse and short and consider our chat history. Only include name, age, occupation, background, goals and motivations, interests and challenges. Output each header as an html list , put each header in a <strong> tag`);
                         const [url, imagePrompt] = await self.getImageGeneration(prompt, "Describe an image of this persona in text form. Be terse and short");
 
-            
+
                         prompt.imagePrompt = imagePrompt;
                         prompt.imageURL = url;
                         prompt.response = personaText;
                     },
-                  
+
 
                 },
 
-                'Brainstorm': function () {
-
+                'Brainstorm': {
+                    method: async function (prompt) {
+                        const brainstorm = await self.getChatCompletion(prompt, `Consider our chat history and brainstorm ideas about ${prompt.promptModifier}, be inspired by our chat history, be terse and short. Output each header as an html list , put each header in a <strong> tag`);
+                        prompt.response = brainstorm;
+                    },
                 },
 
                 'How might we': function () {
@@ -72,8 +75,9 @@ export default {
             const response = completion.data.choices[0].message.content
             prompt.messages.push({ role: "assistant", content: response });
 
-            console.log("User: " + prefix );
-            console.log("Assistant: " + prompt.messages.at(-1).content );
+            console.log("User: " + prefix);
+            console.log("Assistant: " + prompt.messages.at(-1).content);
+            console.log(prompt.messages);
             return response;
         },
 
@@ -321,7 +325,7 @@ export default {
             prompt.isDone = false;
 
             if (prompt.from !== null) {
-                prompt.messages = from.messages.slice();
+                prompt.messages = prompt.from.messages.slice();
             }
             else {
                 prompt.messages = []
@@ -432,12 +436,12 @@ export default {
                 class="output-node absolute top-3 -right-6 rounded-full shadow-lg bg-blue-500 to-blue-400 w-8 h-8">
             </div>
 
-            <h1 class="prompt-title text-xl font-extrabold ">
+            <h1 class="prompt-title mb-4 text-xl font-extrabold ">
                 {{ prompt.type }}
             </h1>
 
             <div class="prompt-inner transition-all duration-500">
-                <div v-if="prompt.isProcessing" class="h-32 justify-center items-center flex">
+                <div v-if="prompt.isProcessing" class="h-96 w-96 justify-center items-center flex">
                     <i class="gg-spinner"></i>
 
                 </div>
@@ -445,37 +449,43 @@ export default {
 
 
                 <div v-else class="transition-all">
-                    <div class="mt-4" v-if="prompt.isDone">
-                        <div v-if="prompt.type == 'Persona'" class="space-y-8  items-center flex flex-col">
+
+                    <div v-if="prompt.type == 'Persona'">
+
+                        <div class="space-y-8 flex flex-wrap justify-center" v-if="prompt.isDone">
                             <img :src="prompt.imageURL" class="rounded-full shadow-lg" />
                             <p class="text-xs w-96">“{{ prompt.imagePrompt }}”</p>
 
                             <div v-html="prompt.response"
                                 class="overflow-y-scroll  space-y-2 max-h-64 text-sm rounded-xl bg-slate-50 p-4">
-
                             </div>
                         </div>
-                    </div>
 
-                    <div v-else>
-                        <div class="w-96 mt-4" v-if="prompt.type == 'Persona'">
-
+                        <div class="w-96 mt-4" v-else="prompt.isDone">
                             <input class="prompt-input" type="text" v-model="prompt.promptModifier"
-                                placeholder="Describe something about the persona you want" />
+                                placeholder="Describe something about the persona" />
 
                         </div>
                     </div>
 
 
+                    <div v-if="prompt.type == 'Brainstorm'" class="space-y-8  w-96 items-center flex flex-col">
 
-                    <!-- <div class="mt-4" v-else-if="prompt.type == 'Brainstorm'">
-                                                                            <input class="prompt-input" type="text" v-model="prompt.promptText" placeholder="Prompt" />
-                                                                        </div>
+                        <div v-if="prompt.isDone">
+                            <div v-if="prompt.isDone" v-html="prompt.response"
+                                class=" w-full overflow-y-scroll space-y-2 max-h-64 text-sm rounded-xl bg-slate-50 p-4">
+                            </div>
+                        </div>
 
-                                                                        <div class="mt-4" v-else-if="prompt.type == 'Logotype'">
-                                                                            <input class="prompt-input" type="text" v-model="prompt.promptText"
-                                                                                placeholder="Modern and sleek, bright colors" />
-                                                                        </div> -->
+                        <div class="w-96 mt-4" v-else>
+                            <input class="prompt-input" type="text" v-model="prompt.promptModifier"
+                                placeholder="Topic, theme or anything to brainstorm about" />
+                        </div>
+                    </div>
+
+
+
+
                 </div>
             </div>
 
