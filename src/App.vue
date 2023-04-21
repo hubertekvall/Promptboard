@@ -297,6 +297,7 @@ export default {
             prompt.isDone = false;
         },
 
+<<<<<<< HEAD
 
 
 
@@ -313,11 +314,31 @@ export default {
 
 
         async processPrompt(promptID) {
+=======
+        async chatCompletion(messages) {
+
+            const configuration = new Configuration({ apiKey: this.apiKey });
+            delete configuration.baseOptions.headers['User-Agent'];
+            const openai = new OpenAIApi(configuration);
+
+            const completion = await openai.createChatCompletion({
+                model: "gpt-3.5-turbo",
+                messages: messages,
+            });
+
+            return completion.data.choices[0].message.content;
+
+        },
+
+
+        async processPrompt(promptID, messages) {
+>>>>>>> 31151f3a2f756d58c4c413b71b9272e3000d7a9a
             let prompt = this.prompts[promptID];
 
             prompt.isProcessing = true;
             prompt.isDone = false;
 
+<<<<<<< HEAD
             if (prompt.from !== null) {
                 prompt.messages = from.messages.slice();
             }
@@ -326,6 +347,93 @@ export default {
             }
 
             console.log(prompt.messages);
+=======
+            const configuration = new Configuration({ apiKey: this.apiKey });
+            delete configuration.baseOptions.headers['User-Agent'];
+            const openai = new OpenAIApi(configuration);
+
+
+            let promptMessages = messages ? [...messages] : [];
+            switch (prompt.type) {
+
+                case 'Fewshot':
+                    promptMessages.push(
+                        { role: "user", content: prompt.exampleTask },
+                        { role: "user", content: prompt.exampleAnswer },
+                        { role: "user", content: prompt.task }
+                    )
+                    break;
+
+                case 'Brainstorm':
+                    promptMessages.push({
+                        role: "user", content: "You are now a design brainstorming assistant. I will give you a short text and you'll brainstorm one terse idea, observation or phrase based on that text, be creative" + "\n" + prompt.promptText
+                    })
+                    break;
+
+                case 'Free':
+                    promptMessages.push({
+                        role: "user", content: prompt.promptText
+                    })  
+                    break;  
+                case 'Logotype':
+                    if (promptMessages.length > 0) {
+                        console.log(promptMessages);
+                        promptMessages.push(
+                            { role: "user", content: "Summarize this chat and turn it into an image prompt for DALL-E of a logotype and include: " + prompt.promptText }
+                        );
+                    }
+
+
+                    else{
+                        promptMessages.push(
+                            { role: "user", content: "Create an image prompt for DALL-E of a logotype that matches: " + prompt.promptText }
+                        );
+                    }
+
+
+                    prompt.promptText = await this.chatCompletion(promptMessages);
+                    console.log(prompt.promptText);
+                    break;
+
+
+            }
+
+
+
+
+            switch (prompt.type) {
+                case 'Free':
+                case 'Fewshot':
+                case 'Brainstorm': {
+                    prompt.response = await this.chatCompletion(promptMessages);
+
+                    promptMessages.push({
+                        role: "assistant", content: prompt.response
+                    })
+                }
+                    break;
+
+                case 'Icon':
+                case 'Logotype': {
+
+             
+
+                    const completion = await openai.createImage({
+                        prompt: prompt.promptText,
+                        n: 1,
+                        size: "256x256",
+                    });
+
+                    prompt.response = completion.data.data[0].url;
+                    prompt.isImage = true;
+                }
+
+                    break;
+            }
+
+
+
+>>>>>>> 31151f3a2f756d58c4c413b71b9272e3000d7a9a
 
             await prompt.process(prompt);
 
@@ -432,16 +540,38 @@ export default {
             </div>
 
             <h1 class="prompt-title text-xl font-extrabold ">
-                {{ prompt.type }}
+                {{ prompt.type + ' Prompt' }}
             </h1>
 
             <div class="prompt-inner transition-all duration-500">
                 <div v-if="prompt.isProcessing" class="h-32 justify-center items-center flex">
                     <i class="gg-spinner"></i>
 
+<<<<<<< HEAD
                 </div>
 
 
+=======
+            <div v-if="prompt.isProcessing" class="h-32 justify-center items-center flex">
+                <i class="gg-spinner"></i>
+            </div>
+
+            <div class="mt-4" v-else-if="prompt.isDone">
+                <img v-if="prompt.isImage" class="w-full shadow-md rounded-2xl" :src="prompt.response" />
+                <p v-else>{{ prompt.response }}</p>
+            </div>
+
+            <div v-else>
+                <div class="mt-4" v-if="prompt.type == 'Fewshot'">
+                    <input class="prompt-input" type="text" v-model="prompt.exampleTask" placeholder="Prompt" />
+                    <input class="prompt-input" type="text" v-model="prompt.exampleAnswer" placeholder="Prompt" />
+                    <input class="prompt-input" type="text" v-model="prompt.task" placeholder="Prompt" />
+                </div>
+
+                <div class="mt-4" v-else-if="prompt.type == 'Brainstorm'">
+                    <input class="prompt-input" type="text" v-model="prompt.promptText" placeholder="Prompt" />
+                </div>
+>>>>>>> 31151f3a2f756d58c4c413b71b9272e3000d7a9a
 
                 <div v-else class="transition-all">
                     <div class="mt-4" v-if="prompt.isDone">
@@ -476,6 +606,10 @@ export default {
                                                                                 placeholder="Modern and sleek, bright colors" />
                                                                         </div> -->
                 </div>
+
+                <div class="mt-4" v-else-if="prompt.type == 'Free'">
+                    <input class="prompt-input" type="text" v-model="prompt.promptText" placeholder="Prompt" />
+                </div>
             </div>
 
 
@@ -490,11 +624,30 @@ export default {
 
     <div class="prompt-toolbar flex flex-wrap  sm:flex-row absolute bottom-10 left-10  ">
         <div class='flex  transition-all duration-500 bg-white p-1 sm:p-2 overflow-clip shadow-lg  rounded-xl space-x-2'>
+<<<<<<< HEAD
             <div v-for="(value, key) in processMethods">
                 <button @click="createPrompt(key)" class="px-3 rounded-md sm:rounded-lg py-1 hover:bg-green-200">
                     {{ key }} </button>
                 <div class="bg-slate-200 w-px "> </div>
             </div>
+=======
+            <button @click="createPrompt('Fewshot')" class="px-3 rounded-md sm:rounded-lg py-1 hover:bg-green-200">
+                Fewshot </button>
+            <div class="bg-slate-200 w-px "> </div>
+
+            <button @click="createPrompt('Brainstorm')" class="px-3 rounded-md sm:rounded-lg py-1 hover:bg-green-200">
+                Brainstorm </button>
+
+            <div class=" bg-slate-200 w-px "> </div>
+
+            <button @click="createPrompt('Logotype')" class="px-3 rounded-md sm:rounded-lg py-1 hover:bg-green-200">
+                Logotype </button>
+
+
+            <div class=" bg-slate-200 w-px "> </div>
+            <button @click="createPrompt('Free')" class="px-3 rounded-md sm:rounded-lg py-1 hover:bg-green-200"> Free
+            </button>
+>>>>>>> 31151f3a2f756d58c4c413b71b9272e3000d7a9a
         </div>
 
         <input v-model="apiKey"
