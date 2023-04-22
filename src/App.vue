@@ -21,7 +21,12 @@ export default {
 
             processMethods: {
                 'Persona': {
-                    method: async function (prompt) {
+                    method: async function (prompt, clicked) {
+
+                        if (prompt.from !== null) prompt.messages = prompt.from.messages;
+                        else prompt.messages = [];
+
+
                         const personaText = await self.getChatCompletion(prompt, `Consider our chat history and generate a persona that is ${prompt.promptModifier},  be inspired by our chat history, be terse and short and consider our chat history. Only include name, age, occupation, background, goals and motivations, interests and challenges. Output each header as an html list , put each header in a <strong> tag`);
                         const [url, imagePrompt] = await self.getImageGeneration(prompt, "Describe an image of this persona in text form. Be terse and short");
 
@@ -35,7 +40,11 @@ export default {
                 },
 
                 'Brainstorm': {
-                    method: async function (prompt) {
+                    method: async function (prompt, clicked) {
+                        if (prompt.from !== null) prompt.messages = prompt.from.messages;
+                        else prompt.messages = [];
+
+
                         const brainstorm = await self.getChatCompletion(prompt, `Consider our chat history and brainstorm ideas about ${prompt.promptModifier}, be inspired by our chat history, be terse and short. Output each header as an html list , put each header in a <strong> tag`);
                         prompt.response = brainstorm;
                     },
@@ -50,11 +59,11 @@ export default {
                 },
 
                 'Instruction': {
-                    method: async function (prompt) {
-                        // const prefix = "You will roleplay with me, here's an example of how your character should behave when conversating. Remember to play the role. \n" +
-                        //                 "User: " + prompt.exampleTask + "\n" + 
-                        //                 "Assistant: " + prompt.exampleAnswer + "\n" + 
-                        //                 "User: " + prompt.task;
+                    method: async function (prompt, clicked) {
+
+                        if (prompt.from !== null) prompt.messages = prompt.from.messages;
+                        else prompt.messages = [];
+
 
                         const prefix = "You will roleplay with me, here's an example of how your character should behave when conversating. Remember to play the role. \n" +
                             prompt.exampleTask + "\n" +
@@ -66,8 +75,17 @@ export default {
                         prompt.response = instruction;
                     },
                 },
+
                 'Chat': {
-                    method: async function (prompt) {
+                    method: async function (prompt, clicked) {
+                        if (prompt.from !== null && !clicked) {
+                            prompt.messages = [...prompt.from.messages];
+                            prompt.visibleMessages = [];
+                        }
+
+                        if (clicked && prompt.messages.length == 0) {
+                            prompt.messages = [...prompt.from.messages];
+                        }
 
                         await self.getChatCompletion(prompt, prompt.reply);
                         prompt.visibleMessages.push(prompt.messages.at(-2), prompt.messages.at(-1));
@@ -348,7 +366,7 @@ export default {
 
 
 
-        async processPrompt(promptID, sendChat) {
+        async processPrompt(promptID, clicked) {
             let prompt = this.prompts[promptID];
 
             prompt.isProcessing = true;
@@ -356,30 +374,8 @@ export default {
 
 
 
-            if (prompt.type === 'Chat' && !sendChat) {
-              
-                const fromCopy = {
-                    ...prompt.from
-                }
 
-                prompt.visibleMessages = [];
-                prompt.messages = fromCopy.messages;
-            }
-
-            else {
-                if (prompt.from !== null) {
-                    prompt.messages = prompt.from.messages.slice();
-                }
-
-                else {
-                    prompt.messages = []
-                }
-
-                await prompt.process(prompt);
-
-            }
-
-
+            await prompt.process(prompt, clicked);
 
 
             prompt.isProcessing = false;
