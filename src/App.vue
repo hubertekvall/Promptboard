@@ -371,7 +371,7 @@ export default {
                 prompt.visibleMessages = [];
 
                 if (prompt.from !== null) {
-                    prompt.messages = prompt.from.messages;
+                    prompt.messages = prompt.from.messages.slice();
                 }
             }
 
