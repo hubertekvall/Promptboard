@@ -36,8 +36,13 @@ export default {
                     prompt.response = brainstorm;
                 },
 
-                'How might we': function () {
+                'How might we': async function (prompt) {
+                    const prefix = `This is our problem statement: ${prompt.user} needs to ${prompt.userNeed} because ${prompt.insight}, break it down into actionable pieces`;
+                    const actionablePieces = await self.getChatCompletion(prompt, prefix);
 
+                    const howMightWe = await self.getChatCompletion(prompt, "Reframe these actionable pieces into questions in this format:\nHow might we [intended experience] for [user] so that [desired effect]? \n Output each How-might-we question as an HTML list element")
+
+                    prompt.response = howMightWe;
                 },
 
                 'Roleplay': async function (prompt) {
@@ -61,10 +66,10 @@ export default {
                 },
 
                 'Instruction': async function (prompt) {
-                    const prefix = "You will roleplay with me, here's an example of how your character should behave when conversating. Remember to play the role. \n" +
-                        +prompt.exampleTask + "\n" +
-                        prompt.exampleAnswer + "\n" +
-                        prompt.task;
+                    const prefix = "Follow my instructions, here's an example of how your should behave when conversating: \n" +
+                        + prompt.exampleTask + "\n" +
+                          prompt.exampleAnswer + "\n" +
+                          prompt.task;
 
                     const instruction = await self.getChatCompletion(prompt, prefix);
                     prompt.response = instruction;
@@ -465,7 +470,7 @@ export default {
     <div v-for="prompt in prompts">
 
         <div :id="prompt.id" :key="prompt.id"
-            class="prompt absolute w-96 top-0 left-0 max-w-xl bg-white p-4 shadow-xl rounded-xl flex flex-col">
+            class="prompt absolute  top-0 left-0  bg-white p-4 shadow-xl rounded-xl flex flex-col">
 
 
 
@@ -484,7 +489,8 @@ export default {
             </div>
 
 
-            <div :class="[prompt.minimized ? 'hidden' : 'visible']" class="prompt-inner transition-all duration-500">
+            <div :class="[prompt.minimized ? 'hidden' : 'visible', prompt.showHistory ? 'opacity-20' : 'opacity-100']"
+                class="prompt-inner ">
 
 
                 <div v-if="prompt.isProcessing && prompt.type !== 'Chat'"
@@ -496,9 +502,10 @@ export default {
                 <div v-else>
                     <div v-if="prompt.type == 'Persona'">
 
-                        <div class="space-y-8 flex flex-wrap justify-center" v-if="prompt.isDone">
-                            <img :src="prompt.imageURL" class="rounded-full shadow-lg" />
-                            <p class="text-xs w-96">“{{ prompt.imagePrompt }}”</p>
+                        <div class="space-y-8 w-96 flex flex-col items-center" v-if="prompt.isDone">
+                            <div><img :src="prompt.imageURL" class="rounded-full shadow-lg" /></div>
+                            <p class="text-xs overflow-y-scroll  space-y-2 max-h-20  rounded-xl bg-slate-50 p-4">“{{
+                                prompt.imagePrompt }}”</p>
 
                             <div v-html="prompt.response"
                                 class="overflow-y-scroll  space-y-2 max-h-64 text-sm rounded-xl bg-slate-50 p-4">
@@ -535,17 +542,35 @@ export default {
 
                         <div class="w-96 mt-4" v-else>
                             <input class="prompt-input" type="text" v-model="prompt.exampleTask"
-                                placeholder="What you want to say" />
+                                placeholder="Example of a task" />
                             <input class="prompt-input" type="text" v-model="prompt.exampleAnswer"
-                                placeholder="How should I react?" />
+                                placeholder="Example of an answer" />
                             <input class="prompt-input" type="text" v-model="prompt.task"
-                                placeholder="How should I react?" />
+                                placeholder="Your request" />
 
                         </div>
                     </div>
 
 
-                    <div v-else-if="prompt.type == 'Roleplay'" class="space-y-8  w-96 items-center flex flex-col">
+                    <div v-else-if="prompt.type == 'How might we'" class="space-y-8  w-96 flex flex-col">
+
+                        <div v-if="prompt.isDone">
+                            <div v-if="prompt.isDone" v-html="prompt.response"
+                                class=" w-96 overflow-y-scroll space-y-2 max-h-64 text-sm rounded-xl bg-slate-50 p-4">
+                            </div>
+                        </div>
+
+                        <div v-else class="flex flex-col">
+
+                            <input class="prompt-input " type="text" v-model="prompt.user" placeholder="User" />
+                            <input class="prompt-input " type="text" v-model="prompt.userNeed" placeholder="Need" />
+                            <input class="prompt-input " type="text" v-model="prompt.insight" placeholder="Insight" />
+
+                        </div>
+                    </div>
+
+
+                    <div v-else-if="prompt.type == 'Roleplay'" class="space-y-8  w-96  flex flex-col">
 
                         <div class="space-y-4 flex flex-wrap justify-center" v-if="prompt.isDone">
                             <div class="w-56">
@@ -615,7 +640,7 @@ export default {
             <div class="flex  justify-between items-end ">
                 <div v-if="prompt.type == 'Chat'" class='mt-8 flex space-x-2 justify-between items-center'>
                     <button @click="processPrompt(prompt.id, true)"
-                        class='rounded-lg p-2 px-4 font-bold text-white bg-blue-600 hover:bg-blue-500'>Reply</button>
+                        class='rounded-lg p-2 px-4  text-white bg-blue-600 hover:bg-blue-500'>Reply</button>
 
                     <button @click="deletePrompt(prompt.id)"
                         class='rounded-lg font-bold p-2 bg-slate-100 text-slate-400 hover:bg-red-500 hover:text-red-100'>
@@ -633,15 +658,19 @@ export default {
                 <PromptControl v-else @processPrompt="processPrompt" @toggleEdit="toggleEdit" :isDone="prompt.isDone"
                     :isProcessing="prompt.isProcessing" :promptID="prompt.id" @deletePrompt="deletePrompt" />
                 <button @click="(e) => prompt.showHistory = !prompt.showHistory"
-                    class=' rounded-lg p-2 px-4 font-bold text-zinc-500 bg-slate-200 hover:bg-slate-300'>History</button>
+                    class='ml-2 rounded-lg p-3 px-5  bg-slate-200 text-slate-400 hover:bg-blue-600 hover:text-red-100'><i
+                        class="gg-readme"></i></button>
 
             </div>
 
-            <div :class="[prompt.showHistory ? 'h-64' : 'h-0', prompt.showHistory ? 'opacity-100' : 'opacity-0']"
-                class="absolute flex flex-col -z-10 transition-all text-zinc-600 p-4 bg-slate-200 w-96 -bottom-72  rounded-lg ">
-                <div class=" bg-zinc-50 p-4 h-full rounded-md overflow-y-scroll ">
-                    <ul class="py-2 " v-for="message in prompt.messages">
-                        <li>{{ message.content }} </li>
+            <div v-if="!prompt.minimized"
+                :class="[prompt.showHistory ? 'h-96' : 'h-0', prompt.showHistory ? 'opacity-100' : 'opacity-0']"
+                class="absolute flex flex-col  transition-all text-zinc-600 p-4 bg-slate-200 w-96 bottom-1/3   rounded-lg ">
+                <div class=" bg-zinc-50  h-full rounded-md overflow-y-scroll ">
+                    <ul style="list-style-type:none;" class="py-4 " v-for="message in prompt.messages">
+                        <li v-if="message.role === 'user'" class=" text-sm bg-blue-200 p-2 rounded-md"
+                            v-html="message.content"></li>
+                        <li v-else class="text-sm  bg-slate-200 p-2 rounded-md" v-html="message.content"></li>
                     </ul>
                 </div>
             </div>
@@ -654,7 +683,7 @@ export default {
 
 
     <div class="prompt-toolbar flex flex-wrap  sm:flex-row absolute bottom-10 left-10  ">
-        <div class='flex transition-all duration-500   font-extrabold overflow-clip space-x-2'>
+        <div class='flex transition-all duration-500   font-normal overflow-clip space-x-2'>
             <div v-for="(value, key) in processMethods">
                 <button @click="createPrompt(key)"
                     class=" transition-all px-3 bg-blue-600 text-white rounded-md sm:rounded-lg py-3 shadow-md hover:bg-blue-500">

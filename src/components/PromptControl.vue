@@ -16,16 +16,16 @@ export default {
 
 
         <button v-if="isProcessing" 
-            class='rounded-lg p-2 px-4 font-bold text-white bg-blue-600 hover:bg-blue-500'><i class="gg-spinner"></i></button>
+            class='rounded-lg p-2 px-4  text-white bg-blue-600 hover:bg-blue-500'><i class="gg-spinner"></i></button>
 
         <button v-else-if="isDone" @click="$emit('toggleEdit', promptID)"
-            class='rounded-lg p-2 px-4 font-bold text-white bg-blue-600 hover:bg-blue-500'>Edit</button>
+            class='rounded-lg p-2 px-4  text-white bg-blue-600 hover:bg-blue-500'>Edit</button>
 
         <button v-else @click="$emit('processPrompt', promptID)"
-            class='rounded-lg p-2 px-4 font-bold text-white bg-blue-600 hover:bg-blue-500'>Process</button>
+            class='rounded-lg p-2 px-4  text-white bg-blue-600 hover:bg-blue-500'>Process</button>
 
         <button @click="$emit('deletePrompt', promptID)"
-            class='rounded-lg font-bold p-2 bg-slate-100 text-slate-400 hover:bg-red-500 hover:text-red-100'>
+            class='rounded-lg  p-2 bg-slate-100 text-slate-400 hover:bg-red-500 hover:text-red-100'>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
                     d="M8 11C7.44772 11 7 11.4477 7 12C7 12.5523 7.44772 13 8 13H16C16.5523 13 17 12.5523 17 12C17 11.4477 16.5523 11 16 11H8Z"

@@ -1,6 +1,7 @@
 @import url('https://fonts.cdnfonts.com/css/inter');
 @import url('https://unpkg.com/css.gg@2.0.0/icons/css/spinner.css');
 @import url('https://unpkg.com/css.gg@2.0.0/icons/css/minimize.css');
+@import url('https://unpkg.com/css.gg@2.0.0/icons/css/readme.css');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
