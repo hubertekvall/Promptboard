@@ -295,8 +295,11 @@ export default {
             }
 
 
+        
+
             // Can't connect to a cycle or the same prompt
             if (senderPrompt.id !== receiverPrompt.id && startPrompt.id !== receiverPrompt.id) {
+                if(receiverPrompt.from !== null) this.removeConnector(receiverPrompt.from, receiverPrompt);
                 senderPrompt.to.push(receiverPrompt);
                 receiverPrompt.from = senderPrompt
             }
