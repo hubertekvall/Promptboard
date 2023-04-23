@@ -36,13 +36,29 @@ export default {
 
                 },
 
-                'Assistant persona': function () {
+                'Roleplay': async function (prompt) {
+                    const characterPrefix = `Consider our chat history and generate a character whose name is ${prompt.roleName}, the character's personality is ${prompt.rolePersonality}, a unique trait of the character is ${prompt.roleTrait}, the character's purpose is to ${prompt.rolePurpose}, be inspired by our chat history, be terse and short`;
+                    const characterText = await self.getChatCompletion(prompt, characterPrefix);
+                    const [url, imagePrompt] = await self.getImageGeneration(prompt, "Describe an image of this character in text form. Be terse and short");
+                    prompt.imagePrompt = imagePrompt;
+                    prompt.imageURL = url;
+                    prompt.characterText = characterText;
 
+                    const prefix = "You will now enter the role as " + prompt.roleName + ", here's an example of how your character should behave when conversating: \n" +
+                        "User: " + prompt.exampleTask + "\n" +
+                        prompt.roleName + ": " + prompt.exampleAnswer + "\n\n" +
+                        "From now on you will remain in character as " + prompt.roleName + "\n" +
+                        "You will answer every question like this: " + "\n" +
+                        prompt.roleName + ": [The way " + prompt.roleName + " would talk]";
+
+                    const response = await self.getChatCompletion(prompt, prefix);
+
+                    prompt.response = response;
                 },
 
                 'Instruction': async function (prompt) {
                     const prefix = "You will roleplay with me, here's an example of how your character should behave when conversating. Remember to play the role. \n" +
-                        prompt.exampleTask + "\n" +
+                        +prompt.exampleTask + "\n" +
                         prompt.exampleAnswer + "\n" +
                         prompt.task;
 
@@ -484,7 +500,7 @@ export default {
                     </div>
 
 
-                    <div v-if="prompt.type == 'Brainstorm'" class="space-y-8  w-96 items-center flex flex-col">
+                    <div v-else-if="prompt.type == 'Brainstorm'" class="space-y-8  w-96 items-center flex flex-col">
 
                         <div v-if="prompt.isDone">
                             <div v-if="prompt.isDone" v-html="prompt.response"
@@ -497,7 +513,7 @@ export default {
                                 placeholder="Topic, theme or anything to brainstorm about" />
                         </div>
                     </div>
-                    <div v-if="prompt.type == 'Instruction'" class="space-y-8  w-96 items-center flex flex-col">
+                    <div v-else-if="prompt.type == 'Instruction'" class="space-y-8  w-96 items-center flex flex-col">
 
                         <div v-if="prompt.isDone">
                             <div v-if="prompt.isDone" v-html="prompt.response"
@@ -517,9 +533,48 @@ export default {
                     </div>
 
 
+                    <div v-else-if="prompt.type == 'Roleplay'" class="space-y-8  w-96 items-center flex flex-col">
+
+                        <div class="space-y-4 flex flex-wrap justify-center" v-if="prompt.isDone">
+                            <div class="w-56">
+                                <img :src="prompt.imageURL" class="rounded-full shadow-lg" />
+                            </div>
+                            <div class="text-xs h-16 overflow-y-scroll">“{{ prompt.imagePrompt }}”</div>
+
+                            <div v-html="prompt.characterText"
+                                class="overflow-y-scroll  space-y-2 max-h-64 text-sm rounded-xl bg-slate-50 p-4">
+                            </div>
+
+                            <div v-html="prompt.response"
+                                class="overflow-y-scroll  space-y-2 max-h-64 text-sm rounded-xl bg-slate-50 p-4">
+                            </div>
+                        </div>
+
+                        <div class="w-96 mt-4" v-else>
+                            <input class="prompt-input" type="text" v-model="prompt.roleName"
+                                placeholder="Name of character" />
+
+                            <input class="prompt-input mt-4" type="text" v-model="prompt.rolePersonality"
+                                placeholder="Personality" />
+                            <input class="prompt-input " type="text" v-model="prompt.roleTrait"
+                                placeholder="What's something unique about the character?" />
+
+                            <input class="prompt-input" type="text" v-model="prompt.rolePurpose"
+                                placeholder="What does the character do?" />
+
+                            <h1 class="mt-8 text-slate-500 font-bold">Example scenario</h1>
+                            <input class="prompt-input" type="text" v-model="prompt.exampleTask"
+                                placeholder="Input from the user" />
+                            <input class="prompt-input" type="text" v-model="prompt.exampleAnswer"
+                                placeholder="How should the character react?" />
+
+                        </div>
+                    </div>
 
 
-                    <div v-if="prompt.type == 'Chat'" class="space-y-8  w-96 items-center flex flex-col">
+
+
+                    <div v-else-if="prompt.type == 'Chat'" class="space-y-8  w-96 items-center flex flex-col">
                         <div
                             class="h-96 w-96 p-2 rounded-xl snap-y snap-proximity bg-slate-50  flex flex-col overflow-y-scroll">
                             <ul style="list-style-type: none;">
