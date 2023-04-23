@@ -20,7 +20,7 @@ export default {
             canvas: {},
             processMethods: {
                 'Persona': async function (prompt) {
-                    const personaText = await self.getChatCompletion(prompt, `Consider our chat history and generate a persona that is ${prompt.promptModifier}, be inspired by our chat history, be terse and short and consider our chat history. Only include name, age, occupation, background, goals and motivations, interests and challenges. Output each header as an html list , put each header in a <strong> tag`);
+                    const personaText = await self.getChatCompletion(prompt, `Generate a persona based on our chat that is ${prompt.promptModifier}, be terse and short and be inspired by our chat. Only include name, age, occupation, background, goals and motivations, interests and challenges. Output each header as an html list , put each header in a <strong> tag`);
                     const [url, imagePrompt] = await self.getImageGeneration(prompt, "Describe an image of this persona in text form. Be terse and short");
                     prompt.imagePrompt = imagePrompt;
                     prompt.imageURL = url;
@@ -30,7 +30,7 @@ export default {
                 'Brainstorm': async function (prompt) {
                     let brainstorm = "";
 
-                    if (prompt.messages.length > 0) brainstorm = await self.getChatCompletion(prompt, `Consider our chat history and brainstorm ideas about ${prompt.promptModifier}, be terse and short and consider our chat history. Output each header as an html list, put each header in a <strong> tag`);
+                    if (prompt.messages.length > 0) brainstorm = await self.getChatCompletion(prompt, `Brainstorm ideas based on our chat that is about ${prompt.promptModifier}, be terse and short and be inspired by our chat. Output each header as an html list, put each header in a <strong> tag`);
                     else brainstorm = await self.getChatCompletion(prompt, `Brainstorm ideas about ${prompt.promptModifier}, be terse and short. Output each header as an html list, put each header in a <strong> tag`);
 
                     prompt.response = brainstorm;
