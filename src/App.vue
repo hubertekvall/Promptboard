@@ -20,7 +20,7 @@ export default {
             canvas: {},
             processMethods: {
                 'Persona': async function (prompt) {
-                    const personaText = await self.getChatCompletion(prompt, `Consider our chat history and generate a persona that is ${prompt.promptModifier},  be inspired by our chat history, be terse and short and consider our chat history. Only include name, age, occupation, background, goals and motivations, interests and challenges. Output each header as an html list , put each header in a <strong> tag`);
+                    const personaText = await self.getChatCompletion(prompt, `Consider our chat history and generate a persona that is ${prompt.promptModifier}, be inspired by our chat history, be terse and short and consider our chat history. Only include name, age, occupation, background, goals and motivations, interests and challenges. Output each header as an html list , put each header in a <strong> tag`);
                     const [url, imagePrompt] = await self.getImageGeneration(prompt, "Describe an image of this persona in text form. Be terse and short");
                     prompt.imagePrompt = imagePrompt;
                     prompt.imageURL = url;
@@ -28,7 +28,11 @@ export default {
                 },
 
                 'Brainstorm': async function (prompt) {
-                    const brainstorm = await self.getChatCompletion(prompt, `Consider our chat history and brainstorm ideas about ${prompt.promptModifier}, be inspired by our chat history, be terse and short. Output each header as an html list , put each header in a <strong> tag`);
+                    let brainstorm = "";
+
+                    if (prompt.messages.length > 0) brainstorm = await self.getChatCompletion(prompt, `Consider our chat history and brainstorm ideas about ${prompt.promptModifier}, be terse and short and consider our chat history. Output each header as an html list, put each header in a <strong> tag`);
+                    else brainstorm = await self.getChatCompletion(prompt, `Brainstorm ideas about ${prompt.promptModifier}, be terse and short. Output each header as an html list, put each header in a <strong> tag`);
+
                     prompt.response = brainstorm;
                 },
 
@@ -461,22 +465,30 @@ export default {
     <div v-for="prompt in prompts">
 
         <div :id="prompt.id" :key="prompt.id"
-            class="prompt absolute top-0 left-0 max-w-xl bg-white p-4 shadow-xl rounded-xl flex flex-col">
-            <div :class="[dragging || prompt.from !== null ? 'bg-green-500' : 'bg-slate-400']" :id="'input-' + prompt.id"
-                class="input-node transition-all duration-500 absolute top-3 -left-6 rounded-full shadow-lg  w-8 h-8">
+            class="prompt absolute w-96 top-0 left-0 max-w-xl bg-white p-4 shadow-xl rounded-xl flex flex-col">
 
+
+
+            <div :class="[dragging || prompt.from !== null ? 'bg-lime-600' : 'bg-slate-400']" :id="'input-' + prompt.id"
+                class="input-node transition-all duration-500 absolute top-10 -left-8 rounded-full shadow-lg  w-8 h-8">
             </div>
             <div :id="'output-' + prompt.id"
-                class="output-node absolute top-3 -right-6 rounded-full shadow-lg bg-blue-500 to-blue-400 w-8 h-8">
+                class="output-node absolute top-10 -right-8 rounded-sm shadow-lg bg-blue-500 to-blue-400 w-8 h-8">
+            </div>
+            <div class="flex mb-4 items-center justify-between">
+                <h1 class="prompt-title  text-blue-600 text-lg font-extrabold ">
+                    {{ prompt.type }}
+                </h1>
+                <button class="rounded-lg p-4   font-bold text-zinc-500 bg-slate-200 hover:bg-blue-500 hover:text-white"
+                    @click="(e) => prompt.minimized = !prompt.minimized"><i class="gg-minimize"></i></button>
             </div>
 
-            <h1 class="prompt-title mb-4 text-xl font-extrabold ">
-                {{ prompt.type }}
-            </h1>
 
-            <div class="prompt-inner transition-all duration-500">
+            <div :class="[prompt.minimized ? 'hidden' : 'visible']" class="prompt-inner transition-all duration-500">
+
+
                 <div v-if="prompt.isProcessing && prompt.type !== 'Chat'"
-                    class="h-96 w-96 justify-center items-center flex">
+                    class="h-32 w-96 justify-center items-center flex">
                     <i class="gg-spinner"></i>
                 </div>
 
@@ -562,8 +574,8 @@ export default {
                             <input class="prompt-input" type="text" v-model="prompt.rolePurpose"
                                 placeholder="What does the character do?" />
 
-                            <h1 class="mt-8 text-slate-500 font-bold">Example scenario</h1>
-                            <input class="prompt-input" type="text" v-model="prompt.exampleTask"
+                            <h1 class="mt-8 text-slate-600 text-lg font-normal">Example scenario</h1>
+                            <input class="mt-2 prompt-input" type="text" v-model="prompt.exampleTask"
                                 placeholder="Input from the user" />
                             <input class="prompt-input" type="text" v-model="prompt.exampleAnswer"
                                 placeholder="How should the character react?" />
@@ -597,6 +609,10 @@ export default {
 
 
                 </div>
+
+            </div>
+
+            <div class="flex  justify-between items-end ">
                 <div v-if="prompt.type == 'Chat'" class='mt-8 flex space-x-2 justify-between items-center'>
                     <button @click="processPrompt(prompt.id, true)"
                         class='rounded-lg p-2 px-4 font-bold text-white bg-blue-600 hover:bg-blue-500'>Reply</button>
@@ -612,15 +628,25 @@ export default {
                                 fill="currentColor" />
                         </svg>
                     </button>
-
                 </div>
+
                 <PromptControl v-else @processPrompt="processPrompt" @toggleEdit="toggleEdit" :isDone="prompt.isDone"
                     :isProcessing="prompt.isProcessing" :promptID="prompt.id" @deletePrompt="deletePrompt" />
+                <button @click="(e) => prompt.showHistory = !prompt.showHistory"
+                    class=' rounded-lg p-2 px-4 font-bold text-zinc-500 bg-slate-200 hover:bg-slate-300'>History</button>
+
             </div>
 
-
-
+            <div :class="[prompt.showHistory ? 'h-64' : 'h-0', prompt.showHistory ? 'opacity-100' : 'opacity-0']"
+                class="absolute flex flex-col -z-10 transition-all text-zinc-600 p-4 bg-slate-200 w-96 -bottom-72  rounded-lg ">
+                <div class=" bg-zinc-50 p-4 h-full rounded-md overflow-y-scroll ">
+                    <ul class="py-2 " v-for="message in prompt.messages">
+                        <li>{{ message.content }} </li>
+                    </ul>
+                </div>
+            </div>
         </div>
+
     </div>
 
 
@@ -628,16 +654,17 @@ export default {
 
 
     <div class="prompt-toolbar flex flex-wrap  sm:flex-row absolute bottom-10 left-10  ">
-        <div class='flex  transition-all duration-500 bg-white p-1 sm:p-2 overflow-clip shadow-lg  rounded-xl space-x-2'>
+        <div class='flex transition-all duration-500   font-extrabold overflow-clip space-x-2'>
             <div v-for="(value, key) in processMethods">
-                <button @click="createPrompt(key)" class="px-3 rounded-md sm:rounded-lg py-1 hover:bg-green-200">
+                <button @click="createPrompt(key)"
+                    class=" transition-all px-3 bg-blue-600 text-white rounded-md sm:rounded-lg py-3 shadow-md hover:bg-blue-500">
                     {{ key }} </button>
-                <div class="bg-slate-200 w-px "> </div>
+                <div class="bg-slate-600 w-px "> </div>
             </div>
         </div>
 
         <input v-model="apiKey"
-            class='ml-0 mt-3 px-3 py-2  rounded-lg outline-slate-400 outline outline-0 focus:outline-1 focus:bg-white bg-slate-200 text-black  sm:ml-4 sm:py-3 sm:mt-0'
+            class=' px-3   rounded-lg outline-slate-400 outline outline-0 focus:outline-1 focus:bg-white bg-slate-200 text-black  sm:ml-4 sm:py-3 sm:mt-0'
             placeholder='API-key...' />
     </div>
 </template>
