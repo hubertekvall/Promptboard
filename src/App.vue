@@ -18,36 +18,18 @@ export default {
             apiKey: '',
             prompts: {},
             canvas: {},
-
             processMethods: {
-                'Persona': {
-                    method: async function (prompt, clicked) {
-
-                        if (prompt.from !== null) prompt.messages = prompt.from.messages;
-                        else prompt.messages = [];
-
-
-                        const personaText = await self.getChatCompletion(prompt, `Consider our chat history and generate a persona that is ${prompt.promptModifier},  be inspired by our chat history, be terse and short and consider our chat history. Only include name, age, occupation, background, goals and motivations, interests and challenges. Output each header as an html list , put each header in a <strong> tag`);
-                        const [url, imagePrompt] = await self.getImageGeneration(prompt, "Describe an image of this persona in text form. Be terse and short");
-
-
-                        prompt.imagePrompt = imagePrompt;
-                        prompt.imageURL = url;
-                        prompt.response = personaText;
-                    },
-
-
+                'Persona': async function (prompt) {
+                    const personaText = await self.getChatCompletion(prompt, `Consider our chat history and generate a persona that is ${prompt.promptModifier},  be inspired by our chat history, be terse and short and consider our chat history. Only include name, age, occupation, background, goals and motivations, interests and challenges. Output each header as an html list , put each header in a <strong> tag`);
+                    const [url, imagePrompt] = await self.getImageGeneration(prompt, "Describe an image of this persona in text form. Be terse and short");
+                    prompt.imagePrompt = imagePrompt;
+                    prompt.imageURL = url;
+                    prompt.response = personaText;
                 },
 
-                'Brainstorm': {
-                    method: async function (prompt, clicked) {
-                        if (prompt.from !== null) prompt.messages = prompt.from.messages;
-                        else prompt.messages = [];
-
-
-                        const brainstorm = await self.getChatCompletion(prompt, `Consider our chat history and brainstorm ideas about ${prompt.promptModifier}, be inspired by our chat history, be terse and short. Output each header as an html list , put each header in a <strong> tag`);
-                        prompt.response = brainstorm;
-                    },
+                'Brainstorm': async function (prompt) {
+                    const brainstorm = await self.getChatCompletion(prompt, `Consider our chat history and brainstorm ideas about ${prompt.promptModifier}, be inspired by our chat history, be terse and short. Output each header as an html list , put each header in a <strong> tag`);
+                    prompt.response = brainstorm;
                 },
 
                 'How might we': function () {
@@ -58,41 +40,23 @@ export default {
 
                 },
 
-                'Instruction': {
-                    method: async function (prompt, clicked) {
+                'Instruction': async function (prompt) {
+                    const prefix = "You will roleplay with me, here's an example of how your character should behave when conversating. Remember to play the role. \n" +
+                        prompt.exampleTask + "\n" +
+                        prompt.exampleAnswer + "\n" +
+                        prompt.task;
 
-                        if (prompt.from !== null) prompt.messages = prompt.from.messages;
-                        else prompt.messages = [];
-
-
-                        const prefix = "You will roleplay with me, here's an example of how your character should behave when conversating. Remember to play the role. \n" +
-                            prompt.exampleTask + "\n" +
-                            prompt.exampleAnswer + "\n" +
-                            prompt.task;
-
-
-                        const instruction = await self.getChatCompletion(prompt, prefix);
-                        prompt.response = instruction;
-                    },
+                    const instruction = await self.getChatCompletion(prompt, prefix);
+                    prompt.response = instruction;
                 },
 
-                'Chat': {
-                    method: async function (prompt, clicked) {
-                        if (prompt.from !== null && !clicked) {
-                            prompt.messages = [...prompt.from.messages];
-                            prompt.visibleMessages = [];
-                        }
-
-                        if (clicked && prompt.messages.length == 0) {
-                            prompt.messages = [...prompt.from.messages];
-                        }
-
-                        await self.getChatCompletion(prompt, prompt.reply);
-                        prompt.visibleMessages.push(prompt.messages.at(-2), prompt.messages.at(-1));
-                        prompt.reply = '';
-                    },
-                },
+                'Chat': async function (prompt) {
+                    await self.getChatCompletion(prompt, prompt.reply);
+                    prompt.visibleMessages.push(prompt.messages.at(-2), prompt.messages.at(-1));
+                }
             },
+
+
             dragging: false
         }
     },
@@ -228,14 +192,17 @@ export default {
 
         createPrompt(type) {
 
+
+
             let startX = 200 * Math.random();
             let startY = 200 * Math.random();
             let id = uuidv4();
             this.prompts[id] = {
                 id: id,
                 type: type,
-                process: this.processMethods[type].method,
-                promptText: this.processMethods[type].promptText,
+                process: this.processMethods[type],
+                promptModifier: '',
+                reply: '',
                 x: startX,
                 y: startY,
                 isDone: false,
@@ -294,12 +261,9 @@ export default {
                 startPrompt = startPrompt.from;
             }
 
-
-        
-
             // Can't connect to a cycle or the same prompt
             if (senderPrompt.id !== receiverPrompt.id && startPrompt.id !== receiverPrompt.id) {
-                if(receiverPrompt.from !== null) this.removeConnector(receiverPrompt.from, receiverPrompt);
+                if (receiverPrompt.from !== null) this.removeConnector(receiverPrompt.from, receiverPrompt);
                 senderPrompt.to.push(receiverPrompt);
                 receiverPrompt.from = senderPrompt
             }
@@ -369,7 +333,7 @@ export default {
 
 
 
-        async processPrompt(promptID, clicked) {
+        async processPrompt(promptID, keepMessages) {
             let prompt = this.prompts[promptID];
 
             prompt.isProcessing = true;
@@ -377,9 +341,17 @@ export default {
 
 
 
+            if (!keepMessages || prompt.messages.length == 0) {
+                prompt.messages = [];
+                prompt.visibleMessages = [];
 
-            await prompt.process(prompt, clicked);
+                if (prompt.from !== null) {
+                    prompt.messages = prompt.from.messages;
+                }
+            }
 
+
+            await prompt.process(prompt, keepMessages);
 
             prompt.isProcessing = false;
             prompt.isDone = true;
@@ -548,15 +520,20 @@ export default {
 
 
                     <div v-if="prompt.type == 'Chat'" class="space-y-8  w-96 items-center flex flex-col">
-                        <div class="h-96 w-96 p-2 rounded-xl  bg-slate-50  overflow-y-scroll">
-                            <ul style="list-style-type: none;" v-for="message in prompt.visibleMessages">
-                                <li v-if="message.role === 'user'" class="text-sm bg-blue-200 p-2 rounded-md"
-                                    v-html="message.content"></li>
-                                <li v-else class="text-sm bg-slate-200 p-2 rounded-md" v-html="message.content"></li>
+                        <div
+                            class="h-96 w-96 p-2 rounded-xl snap-y snap-proximity bg-slate-50  flex flex-col overflow-y-scroll">
+                            <ul style="list-style-type: none;">
+                                <div v-for="message in prompt.visibleMessages">
+                                    <li v-if="message.role === 'user'" class="mt-4 text-sm bg-blue-200 p-2 rounded-md"
+                                        v-html="message.content"></li>
+                                    <li v-else class="text-sm mt-4 bg-slate-200 p-2 rounded-md" v-html="message.content">
+                                    </li>
+                                </div>
+                                <li v-if="prompt.isProcessing" class="snap-end p-6 rounded-lg flex justify-center"> <i
+                                        class="gg-spinner"></i></li>
                             </ul>
 
-                            <div v-if="prompt.isProcessing" class="mt-4 bg-slate-100 p-2 rounded-lg"> <i
-                                    class="gg-spinner"></i></div>
+
                         </div>
                         <input class="prompt-input" type="text" v-model="prompt.reply" placeholder="Your answer" />
                     </div>
