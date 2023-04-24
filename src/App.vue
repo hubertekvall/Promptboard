@@ -67,7 +67,7 @@ export default {
 
                 'Instruction': async function (prompt) {
                     const prefix = "Follow my instructions, here's an example of how your should behave when conversating: \n" +
-                        + prompt.exampleTask + "\n" +
+                          prompt.exampleTask + "\n" +
                           prompt.exampleAnswer + "\n" +
                           prompt.task;
 
