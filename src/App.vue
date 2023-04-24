@@ -66,13 +66,13 @@ export default {
                 },
 
                 'Instruction': async function (prompt) {
-                    const prefix = "Follow my instructions, here's an example of how your should behave when conversating: \n" +
+                    const prefix = "Follow my instructions, here's an example of a task: \n" +
                           prompt.exampleTask + "\n" +
                           prompt.exampleAnswer + "\n" +
                           prompt.task;
 
                     const instruction = await self.getChatCompletion(prompt, prefix);
-                    prompt.response = instruction;
+                    prompt.response =  instruction ;
                 },
 
                 'Chat': async function (prompt) {
@@ -664,8 +664,8 @@ export default {
             </div>
 
             <div v-if="!prompt.minimized"
-                :class="[prompt.showHistory ? 'h-96' : 'h-0', prompt.showHistory ? 'opacity-100' : 'opacity-0']"
-                class="absolute flex flex-col  transition-all text-zinc-600 p-4 bg-slate-200 w-96 bottom-1/3   rounded-lg ">
+                :class="[prompt.showHistory ? 'h-96' : 'h-0', prompt.showHistory ? 'opacity-100' : 'opacity-0', prompt.showHistory ? 'visible' : 'hidden']"
+                class="absolute flex flex-col  transition-all duration-500 text-zinc-600 p-4 bg-slate-200 w-96 bottom-1/3   rounded-lg ">
                 <div class=" bg-zinc-50  h-full rounded-md overflow-y-scroll ">
                     <ul style="list-style-type:none;" class="py-4 " v-for="message in prompt.messages">
                         <li v-if="message.role === 'user'" class=" text-sm bg-blue-200 p-2 rounded-md"

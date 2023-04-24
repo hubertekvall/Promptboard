@@ -18,3 +18,8 @@ ul{
   list-style-type: disc;
   padding: 1rem;
 }
+
+
+div {
+  white-space: pre-wrap;
+}
