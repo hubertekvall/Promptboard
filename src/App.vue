@@ -21,10 +21,11 @@ export default {
             processMethods: {
                 'Persona': async function (prompt) {
                     const personaText = await self.getChatCompletion(prompt, `Generate a persona based on our chat that is ${prompt.promptModifier}, be terse and short and be inspired by our chat. Only include name, age, occupation, background, goals and motivations, interests and challenges. Output each header as an html list , put each header in a <strong> tag`);
+                    prompt.response = personaText;
                     const [url, imagePrompt] = await self.getImageGeneration(prompt, "Describe an image of this persona in text form. Be terse and short");
                     prompt.imagePrompt = imagePrompt;
                     prompt.imageURL = url;
-                    prompt.response = personaText;
+
                 },
 
                 'Brainstorm': async function (prompt) {
@@ -38,11 +39,10 @@ export default {
 
                 'How might we': async function (prompt) {
                     const prefix = `This is our problem statement: ${prompt.user} needs to ${prompt.userNeed} because ${prompt.insight}, break it down into actionable pieces`;
-                    const actionablePieces = await self.getChatCompletion(prompt, prefix);
+                    prompt.response = prefix;
+                    prompt.response = await self.getChatCompletion(prompt, prefix);
 
-                    const howMightWe = await self.getChatCompletion(prompt, "Reframe these actionable pieces into questions in this format:\nHow might we [intended experience] for [user] so that [desired effect]? \n Output each How-might-we question as an HTML list element")
-
-                    prompt.response = howMightWe;
+                    prompt.response = await self.getChatCompletion(prompt, "Reframe these actionable pieces into questions in this format:\nHow might we [intended experience] for [user] so that [desired effect]? \n Output each How-might-we question as an HTML list element. Be terse and short");
                 },
 
                 'Roleplay': async function (prompt) {
@@ -67,12 +67,12 @@ export default {
 
                 'Instruction': async function (prompt) {
                     const prefix = "Follow my instructions, here's an example of a task: \n" +
-                          prompt.exampleTask + "\n" +
-                          prompt.exampleAnswer + "\n" +
-                          prompt.task;
+                        prompt.exampleTask + "\n" +
+                        prompt.exampleAnswer + "\n" +
+                        prompt.task;
 
                     const instruction = await self.getChatCompletion(prompt, prefix);
-                    prompt.response =  instruction ;
+                    prompt.response = instruction;
                 },
 
                 'Chat': async function (prompt) {
@@ -493,17 +493,23 @@ export default {
                 class="prompt-inner ">
 
 
-                <div v-if="prompt.isProcessing && prompt.type !== 'Chat'"
+                <!-- <div v-if="prompt.isProcessing && prompt.type !== 'Chat'"
                     class="h-32 w-96 justify-center items-center flex">
                     <i class="gg-spinner"></i>
-                </div>
+                </div> -->
 
 
-                <div v-else>
+                <div>
                     <div v-if="prompt.type == 'Persona'">
 
-                        <div class="space-y-8 w-96 flex flex-col items-center" v-if="prompt.isDone">
-                            <div><img :src="prompt.imageURL" class="rounded-full shadow-lg" /></div>
+                        <div class="space-y-8 w-96 flex flex-col items-center" v-if="prompt.isDone || prompt.isProcessing">
+                            <div>
+                                <div v-if="prompt.isProcessing">
+                                    <i class="gg-spinner"></i>
+                                </div>
+                                <img v-else :src="prompt.imageURL" class="rounded-full shadow-lg" />
+                               
+                            </div>
                             <p class="text-xs overflow-y-scroll  space-y-2 max-h-20  rounded-xl bg-slate-50 p-4">“{{
                                 prompt.imagePrompt }}”</p>
 
@@ -512,7 +518,7 @@ export default {
                             </div>
                         </div>
 
-                        <div class="w-96 mt-4" v-else="prompt.isDone">
+                        <div class="w-96 mt-4" v-else>
                             <input class="prompt-input" type="text" v-model="prompt.promptModifier"
                                 placeholder="Describe something about the persona" />
                         </div>
@@ -545,8 +551,7 @@ export default {
                                 placeholder="Example of a task" />
                             <input class="prompt-input" type="text" v-model="prompt.exampleAnswer"
                                 placeholder="Example of an answer" />
-                            <input class="prompt-input" type="text" v-model="prompt.task"
-                                placeholder="Your request" />
+                            <input class="prompt-input" type="text" v-model="prompt.task" placeholder="Your request" />
 
                         </div>
                     </div>
@@ -554,8 +559,8 @@ export default {
 
                     <div v-else-if="prompt.type == 'How might we'" class="space-y-8  w-96 flex flex-col">
 
-                        <div v-if="prompt.isDone">
-                            <div v-if="prompt.isDone" v-html="prompt.response"
+                        <div v-if="prompt.isDone || prompt.isProcessing">
+                            <div v-html="prompt.response"
                                 class=" w-96 overflow-y-scroll space-y-2 max-h-64 text-sm rounded-xl bg-slate-50 p-4">
                             </div>
                         </div>
