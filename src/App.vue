@@ -22,9 +22,9 @@ export default {
                 'Persona': async function (prompt) {
                     const personaText = await self.getChatCompletion(prompt, `Generate a persona based on our chat that is ${prompt.promptModifier}, be terse and short and be inspired by our chat. Only include name, age, occupation, background, goals and motivations, interests and challenges. Output each header as an html list , put each header in a <strong> tag`);
                     prompt.response = personaText;
-                    const [url, imagePrompt] = await self.getImageGeneration(prompt, "Describe an image of this persona in text form. Be terse and short");
-                    prompt.imagePrompt = imagePrompt;
-                    prompt.imageURL = url;
+                    // const [url, imagePrompt] = await self.getImageGeneration(prompt, "Describe an image of this persona in text form. Be terse and short");
+                    // prompt.imagePrompt = imagePrompt;
+                    // prompt.imageURL = url;
 
                 },
 
@@ -48,9 +48,9 @@ export default {
                 'Roleplay': async function (prompt) {
                     const characterPrefix = `Consider our chat history and generate a character whose name is ${prompt.roleName}, the character's personality is ${prompt.rolePersonality}, a unique trait of the character is ${prompt.roleTrait}, the character's purpose is to ${prompt.rolePurpose}, be inspired by our chat history, be terse and short`;
                     const characterText = await self.getChatCompletion(prompt, characterPrefix);
-                    const [url, imagePrompt] = await self.getImageGeneration(prompt, "Describe an image of this character in text form. Be terse and short");
-                    prompt.imagePrompt = imagePrompt;
-                    prompt.imageURL = url;
+                    // const [url, imagePrompt] = await self.getImageGeneration(prompt, "Describe an image of this character in text form. Be terse and short");
+                    // prompt.imagePrompt = imagePrompt;
+                    // prompt.imageURL = url;
                     prompt.characterText = characterText;
 
                     const prefix = "You will now enter the role as " + prompt.roleName + ", here's an example of how your character should behave when conversating: \n" +
@@ -507,12 +507,9 @@ export default {
                                 <div v-if="prompt.isProcessing">
                                     <i class="gg-spinner"></i>
                                 </div>
-                                <img v-else :src="prompt.imageURL" class="rounded-full shadow-lg" />
                                
                             </div>
-                            <p class="text-xs overflow-y-scroll  space-y-2 max-h-20  rounded-xl bg-slate-50 p-4">“{{
-                                prompt.imagePrompt }}”</p>
-
+                          
                             <div v-html="prompt.response"
                                 class="overflow-y-scroll  space-y-2 max-h-64 text-sm rounded-xl bg-slate-50 p-4">
                             </div>
@@ -578,11 +575,8 @@ export default {
                     <div v-else-if="prompt.type == 'Roleplay'" class="space-y-8  w-96  flex flex-col">
 
                         <div class="space-y-4 flex flex-wrap justify-center" v-if="prompt.isDone">
-                            <div class="w-56">
-                                <img :src="prompt.imageURL" class="rounded-full shadow-lg" />
-                            </div>
-                            <div class="text-xs h-16 overflow-y-scroll">“{{ prompt.imagePrompt }}”</div>
-
+                            
+                            
                             <div v-html="prompt.characterText"
                                 class="overflow-y-scroll  space-y-2 max-h-64 text-sm rounded-xl bg-slate-50 p-4">
                             </div>
